@@ -1,0 +1,24 @@
+{
+  "name": "eyes_grid",
+  "module": "main.ts",
+  "type": "module",
+  "scripts": {
+    "start": "bun run main.ts",
+    "build": "bun dts-gen main.ts",
+    "dev": "bun --watch run main.ts"
+  },
+  "devDependencies": {
+    "@types/big.js": "^6.2.2",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "ccxt": "^4.4.21",
+    "dayjs": "^1.11.13",
+    "log-update": "^6.1.0",
+    "log4js": "^6.9.1",
+    "table": "^6.8.2"
+  }
+}
