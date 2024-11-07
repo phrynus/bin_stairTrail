@@ -3,6 +3,7 @@ import logUpdate from "log-update";
 import { table } from "table";
 import dayjs from "dayjs";
 import { file } from "bun";
+import { BinanceApi } from "binanceApi";
 import log4js from "log4js";
 
 console.log(dayjs().format("YYYY MM-DD HH:mm:ss SSS"), `  v${Bun.version}`, "\n");
@@ -50,6 +51,7 @@ const exchange = new pro.binance({
     defaultType: "future"
   }
 });
+const BinanceExchange = new BinanceApi(config.APIKEY, config.SECRET, config.PROXYSHTTP);
 if (config.PROXYSHTTP) {
   exchange.httpProxy = config.PROXYSHTTP;
 }
@@ -156,6 +158,17 @@ while (true) {
       //
       if (pond[item.symbol].stopLoss >= percentage) {
         logger.info("价格变化\n", JSON.stringify(pond[item.symbol]), "\n");
+        // BinanceExchange._({
+        //   method: "POST",
+        //   url: "/fapi/v1/order",
+        //   params: {
+        //     symbol: item.symbol,
+        //     type: "MARKET",
+        //     timeInForce: "GTC",
+        //     side: item.side == "long" ? "sell" : "buy",
+        //     positionSide: ""
+        //   }
+        // });
         await exchange
           .createOrder(item.symbol, "market", item.side == "long" ? "sell" : "buy", item.contracts, undefined, {
             test: true
