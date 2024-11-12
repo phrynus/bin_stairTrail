@@ -109,6 +109,8 @@ const log = () => {
   logUpdate(symbolTab);
 };
 // 监听config.json改变改变重新启动
+let positions = await exchange.fetchPositionsWs();
+console.log(positions);
 
 while (true) {
   try {
@@ -127,59 +129,81 @@ while (true) {
     for (let index = 0; index < positions.length; index++) {
       const item = positions[index];
       delete item.info;
-      pond[item.symbol] = { ...pond[item.symbol], ...item };
+      pond[item.symbol + item.side] = { ...pond[item.symbol + item.side], ...item };
       let percentage = ((item.markPrice - item.entryPrice) / item.entryPrice) * 100;
       if (item.side == "short") {
         percentage = -percentage;
       }
-      pond[item.symbol].percentage = percentage.toFixed(4);
-      pond[item.symbol].topPercentage =
-        pond[item.symbol].topPercentage > percentage.toFixed(4)
-          ? pond[item.symbol].topPercentage
+      pond[item.symbol + item.side].percentage = percentage.toFixed(4);
+      pond[item.symbol + item.side].topPercentage =
+        pond[item.symbol + item.side].topPercentage > percentage.toFixed(4)
+          ? pond[item.symbol + item.side].topPercentage
           : percentage.toFixed(4);
       let pondStop = () => {
         let stop = stopLoss;
         let gears = gear;
-        if (config.STOPSYMBOL[item.symbol]?.STOPLOSS) {
-          stop = config.STOPSYMBOL[item.symbol].STOPLOSS;
+        if (config.STOPSYMBOL[item.symbol + item.side]?.STOPLOSS) {
+          stop = config.STOPSYMBOL[item.symbol + item.side].STOPLOSS;
         }
-        if (config.STOPSYMBOL[item.symbol]?.STOPLOSSSTAIRS) {
-          gears = config.STOPSYMBOL[item.symbol].STOPLOSSSTAIRS;
+        if (config.STOPSYMBOL[item.symbol + item.side]?.STOPLOSSSTAIRS) {
+          gears = config.STOPSYMBOL[item.symbol + item.side].STOPLOSSSTAIRS;
         }
         for (let index = 0; index < gears.length; index++) {
-          if (pond[item.symbol].topPercentage >= gears[index][0]) {
-            stop = pond[item.symbol].topPercentage * (1 - gears[index][1]);
-            pond[item.symbol].t = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XOX"][index];
+          if (pond[item.symbol + item.side].topPercentage >= gears[index][0]) {
+            stop = pond[item.symbol + item.side].topPercentage * (1 - gears[index][1]);
+            pond[item.symbol + item.side].t = [
+              "I",
+              "II",
+              "III",
+              "IV",
+              "V",
+              "VI",
+              "VII",
+              "VIII",
+              "IX",
+              "X",
+              "XI",
+              "XII",
+              "XIII",
+              "XIV",
+              "XV",
+              "XVI",
+              "XVII",
+              "XVIII",
+              "XIX",
+              "XX"
+            ][index];
           }
         }
         return stop.toFixed(2);
       };
-      pond[item.symbol].stopLoss = pondStop();
+      pond[item.symbol + item.side].stopLoss = pondStop();
       //
-      if (pond[item.symbol].stopLoss >= percentage) {
-        logger.info("价格变化\n", JSON.stringify(pond[item.symbol]), "\n");
-        // BinanceExchange._({
-        //   method: "POST",
-        //   url: "/fapi/v1/order",
-        //   params: {
-        //     symbol: item.symbol,
-        //     type: "MARKET",
-        //     timeInForce: "GTC",
-        //     side: item.side == "long" ? "sell" : "buy",
-        //     positionSide: ""
-        //   }
-        // });
-        await exchange
-          .createOrder(item.symbol, "market", item.side == "long" ? "sell" : "buy", item.contracts, undefined, {
-            test: true
-          })
-          .then((res: any) => {
-            logger.info("平仓成功", pond[item.symbol], res);
-            delete pond[item.symbol];
-          })
-          .catch((e: any) => {
-            logger.error("平仓失败", e);
-          });
+      if (pond[item.symbol + item.side].stopLoss >= percentage) {
+        logger.info("价格变化\n", JSON.stringify(pond[item.symbol + item.side]), "\n");
+        BinanceExchange._({
+          method: "POST",
+          url: "/fapi/v1/order",
+          params: {
+            symbol: item.symbol.split("/")[0] + "USDT",
+            type: "MARKET",
+            timeInForce: "GTC",
+            side: item.side == "long" ? "SELL" : "BUY",
+            positionSide: item.side == "long" ? "SELL" : "BUY",
+            quantity
+          }
+        });
+        // await exchange
+        //   .createOrder(item.symbol, "market", item.side == "long" ? "sell" : "buy", item.contracts, undefined, {
+        //     test: true
+        //   })
+        //   .then((res: any) => {
+        //     logger.info("平仓成功", pond[item.symbol + item.side], res);
+        //     delete pond[item.symbol + item.side];
+        //   })
+        //   .catch((e: any) => {
+        //     logger.error("平仓失败", e);
+        //   });
       }
     }
     log();

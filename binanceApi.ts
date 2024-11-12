@@ -9,12 +9,16 @@ export class BinanceApi {
   secret: string;
   resend: number;
   httpsAgent: any;
-  constructor(key: string, secret: string, proxy: string) {
-    this.httpsAgent = new HttpsProxyAgent(proxy);
-    this.axios = axios.create({
-      baseURL: "https://fapi.binance.com",
-      httpsAgent: proxy == "" ? new https.Agent({ keepAlive: true }) : this.httpsAgent
-    });
+  constructor(key: string, secret: string, proxy: string = "") {
+    this.axios =
+      proxy != ""
+        ? axios.create({
+            baseURL: "https://fapi.binance.com",
+            httpsAgent: new HttpsProxyAgent(proxy)
+          })
+        : axios.create({
+            baseURL: "https://fapi.binance.com"
+          });
     // KEY密钥
     this.key = key;
     this.secret = secret;
@@ -39,6 +43,7 @@ export class BinanceApi {
         return response.data;
       },
       (error: any) => {
+        console.log(error);
         return Promise.reject(error);
       }
     );
